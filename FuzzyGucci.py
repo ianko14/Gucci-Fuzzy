@@ -3,9 +3,9 @@ import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 import matplotlib.pyplot as plt
 
-# Definimos universos de discurso
+# Universos de discurso
 universo = np.arange(0, 11, 1)
-plato_universo = np.arange(0, 10, 1)
+plato_universo = np.arange(0, 9, 1)
 
 # Entradas
 dulce = ctrl.Antecedent(universo, 'Dulce')
@@ -17,31 +17,33 @@ hambre = ctrl.Antecedent(universo, 'Hambre')
 gusto_deseado = ctrl.Consequent(universo, 'GustoDeseado')
 tipo_plato = ctrl.Consequent(universo, 'TipoPlato')
 
-# NUEVAS ENTRADAS para sistema 3
+# Nuevas entradas para sistema 3
 gusto_deseado_in = ctrl.Antecedent(universo, 'GustoDeseadoIn')
 tipo_plato_in = ctrl.Antecedent(universo, 'TipoPlatoIn')
 
 # Salida final
 plato_sugerido = ctrl.Consequent(plato_universo, 'PlatoSugerido')
 
-# --- FUNCIONES DE MEMBRESÍA ---
+# --- Funciones de pertenencia ---
 def asignar_membresias(var):
-    var['baja'] = fuzz.trimf(var.universe, [0, 0, 5])
-    var['media'] = fuzz.trimf(var.universe, [2.5, 5, 7.5])
-    var['alta'] = fuzz.trimf(var.universe, [5, 10, 10])
+    var['baja'] = fuzz.trimf(var.universe, [0, 0, 4])
+    var['media'] = fuzz.trimf(var.universe, [2, 5, 8])
+    var['alta'] = fuzz.trimf(var.universe, [6, 10, 10])
 
 for v in [dulce, salado, presupuesto, hambre]:
     asignar_membresias(v)
 
+# Gusto deseado
 for var in [gusto_deseado, gusto_deseado_in]:
-    var['salado'] = fuzz.trimf(universo, [0, 0, 5])
-    var['agridulce'] = fuzz.trimf(universo, [2.5, 5, 7.5])
-    var['dulce'] = fuzz.trimf(universo, [5, 10, 10])
+    var['salado'] = fuzz.trimf(var.universe, [0, 0, 4])
+    var['agridulce'] = fuzz.trimf(var.universe, [3, 5, 7])
+    var['dulce'] = fuzz.trimf(var.universe, [6, 10, 10])
 
+# Tipo de plato
 for var in [tipo_plato, tipo_plato_in]:
-    var['ligero'] = fuzz.trimf(universo, [0, 0, 5])
-    var['moderado'] = fuzz.trimf(universo, [2.5, 5, 7.5])
-    var['fuerte'] = fuzz.trimf(universo, [5, 10, 10])
+    var['ligero'] = fuzz.trimf(var.universe, [0, 0, 4])
+    var['moderado'] = fuzz.trimf(var.universe, [3, 5, 7])
+    var['fuerte'] = fuzz.trimf(var.universe, [6, 10, 10])
 
 # Platos codificados
 platos = {
@@ -59,7 +61,7 @@ platos = {
 for i, name in platos.items():
     plato_sugerido[name] = fuzz.trimf(plato_sugerido.universe, [i, i, i])
 
-# --- SISTEMA 1: GUSTO DESEADO ---
+# --- Sistema 1: Gusto Deseado ---
 reglas_gusto = [
     ctrl.Rule(dulce['baja'] & salado['baja'], gusto_deseado['agridulce']),
     ctrl.Rule(dulce['baja'] & salado['media'], gusto_deseado['salado']),
@@ -69,12 +71,12 @@ reglas_gusto = [
     ctrl.Rule(dulce['media'] & salado['alta'], gusto_deseado['salado']),
     ctrl.Rule(dulce['alta'] & salado['baja'], gusto_deseado['dulce']),
     ctrl.Rule(dulce['alta'] & salado['media'], gusto_deseado['dulce']),
-    ctrl.Rule(dulce['alta'] & salado['alta'], gusto_deseado['agridulce']),
+    ctrl.Rule(dulce['alta'] & salado['alta'], gusto_deseado['agridulce'])
 ]
 sistema_gusto = ctrl.ControlSystem(reglas_gusto)
 sim_gusto = ctrl.ControlSystemSimulation(sistema_gusto)
 
-# --- SISTEMA 2: TIPO DE PLATO ---
+# --- Sistema 2: Tipo de Plato ---
 reglas_tipo = [
     ctrl.Rule(presupuesto['baja'] & hambre['baja'], tipo_plato['ligero']),
     ctrl.Rule(presupuesto['baja'] & hambre['media'], tipo_plato['ligero']),
@@ -84,12 +86,12 @@ reglas_tipo = [
     ctrl.Rule(presupuesto['media'] & hambre['alta'], tipo_plato['fuerte']),
     ctrl.Rule(presupuesto['alta'] & hambre['baja'], tipo_plato['moderado']),
     ctrl.Rule(presupuesto['alta'] & hambre['media'], tipo_plato['fuerte']),
-    ctrl.Rule(presupuesto['alta'] & hambre['alta'], tipo_plato['fuerte']),
+    ctrl.Rule(presupuesto['alta'] & hambre['alta'], tipo_plato['fuerte'])
 ]
 sistema_tipo = ctrl.ControlSystem(reglas_tipo)
 sim_tipo = ctrl.ControlSystemSimulation(sistema_tipo)
 
-# --- SISTEMA 3: PLATO SUGERIDO ---
+# --- Sistema 3: Plato Sugerido ---
 reglas_plato = [
     ctrl.Rule(gusto_deseado_in['dulce'] & tipo_plato_in['ligero'], plato_sugerido['Flan']),
     ctrl.Rule(gusto_deseado_in['salado'] & tipo_plato_in['ligero'], plato_sugerido['Bastoncitos de muzzarela']),
@@ -99,12 +101,12 @@ reglas_plato = [
     ctrl.Rule(gusto_deseado_in['agridulce'] & tipo_plato_in['moderado'], plato_sugerido['Brocheta de pollo agridulce']),
     ctrl.Rule(gusto_deseado_in['dulce'] & tipo_plato_in['fuerte'], plato_sugerido['Selva negra']),
     ctrl.Rule(gusto_deseado_in['salado'] & tipo_plato_in['fuerte'], plato_sugerido['Pizza']),
-    ctrl.Rule(gusto_deseado_in['agridulce'] & tipo_plato_in['fuerte'], plato_sugerido['Pollo Tariyaki']),
+    ctrl.Rule(gusto_deseado_in['agridulce'] & tipo_plato_in['fuerte'], plato_sugerido['Pollo Tariyaki'])
 ]
 sistema_plato = ctrl.ControlSystem(reglas_plato)
 sim_plato = ctrl.ControlSystemSimulation(sistema_plato)
 
-# --- ENTRADA DE DATOS ---
+# --- Entrada de datos ---
 def leer_entrada(nombre):
     while True:
         try:
@@ -122,29 +124,28 @@ s = leer_entrada('Salado')
 p = leer_entrada('Presupuesto')
 h = leer_entrada('Hambre')
 
-# --- ETAPA 1: GUSTO DESEADO ---
+# Etapa 1
 sim_gusto.input['Dulce'] = d
 sim_gusto.input['Salado'] = s
 sim_gusto.compute()
 gusto = sim_gusto.output['GustoDeseado']
 
-# --- ETAPA 2: TIPO DE PLATO ---
+# Etapa 2
 sim_tipo.input['Presupuesto'] = p
 sim_tipo.input['Hambre'] = h
 sim_tipo.compute()
 tipo = sim_tipo.output['TipoPlato']
 
-# --- ETAPA 3: PLATO SUGERIDO ---
+# Etapa 3
 sim_plato.input['GustoDeseadoIn'] = gusto
 sim_plato.input['TipoPlatoIn'] = tipo
 sim_plato.compute()
 salida = sim_plato.output['PlatoSugerido']
 
-# Obtener nombre más cercano
 plato_final = min(platos.items(), key=lambda x: abs(x[0] - salida))[1]
 print(f"\n🍽️ Plato recomendado: {plato_final}")
 
-# --- GRAFICAR ---
+# --- Graficar ---
 dulce.view(sim=sim_gusto)
 salado.view(sim=sim_gusto)
 presupuesto.view(sim=sim_tipo)
